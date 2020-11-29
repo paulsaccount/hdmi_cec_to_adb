@@ -88,6 +88,8 @@ class Monitor:
         tv_off_command_key = '26'
         android_tv.shell('input keyevent %s' % tv_off_command_key)
 
+        android_tv.close()
+
     def cec_callback(self, event, *args):
         logger.debug('[event=%s][args=%s]', event, args)
         if (event == cec.EVENT_COMMAND

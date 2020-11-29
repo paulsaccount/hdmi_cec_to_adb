@@ -7,7 +7,7 @@ with open('README.md', 'r') as f:
     readme = f.read()
 
 setup(name='hdmi-cec-to-adb',
-      version='0.1.0.dev3',
+      version='0.1.0.dev5',
       author='Paul Pavlish',
       author_email='hello@paulpavlish.com',
       url='https://www.github.com/paulsaccount/hdmi_cec_to_adb',
