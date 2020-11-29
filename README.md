@@ -35,7 +35,10 @@ Once your Raspberry PI is setup, install hdmi_cec_to_adb and setup a cron to aut
 mkvirtualenv hdmi_cec_to_adb
 
 pip install hdmi-cec-to-adb
+```
 
-# Create a cronjob on reboot, the script checks for existing processes
-echo "@reboot export TV_IP_ADDRESS=192.168.1.99 && source /home/pi/.virtualenvs/hdmi_cec_to_adb/bin/activate && start_hdmi_cec_monitor &" | sudo tee -a /etc/cron.d/hdmi_cec_to_adb > /dev/null
+```bash
+# Add the following to your crontab and make sure you use your TV IP Address
+SHELL=/bin/bash
+@reboot export TV_IP_ADDRESS=192.168.1.99 && source /home/pi/.virtualenvs/hdmi_cec_to_adb/bin/activate && start_hdmi_cec_monitor
 ```

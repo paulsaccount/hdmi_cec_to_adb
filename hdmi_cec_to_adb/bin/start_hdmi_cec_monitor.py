@@ -1,3 +1,4 @@
+import argparse
 import logging
 import os
 import subprocess
@@ -16,22 +17,27 @@ class Monitor:
     adb_key_filepath = None
     adb_port = None
 
-    def __init__(self, tv_ip_address, adb_key_filepath, adb_port=5555) -> None:
+    def __init__(self, tv_ip_address, adb_key_filepath, adb_port=5555, verbose=False, log_to_disk=False) -> None:
         super().__init__()
         self.tv_ip_address = tv_ip_address
         self.adb_key_filepath = adb_key_filepath
         self.adb_port = adb_port
 
-        self.setup_logging()
+        self.setup_logging(verbose, log_to_disk)
         self.validate_configuration()
 
     @staticmethod
-    def setup_logging():
-        logging_config = {'level': logging.INFO,
+    def setup_logging(verbose, log_to_disk):
+        log_level = logging.DEBUG if verbose else logging.INFO
+
+        handlers = [
+            logging.StreamHandler(),
+        ]
+        if log_to_disk:
+            handlers.append(logging.FileHandler('/tmp/hdmi_cec_to_adb.log'))
+        logging_config = {'level': log_level,
                           'format': '%(asctime)s [%(levelname)s] %(message)s',
-                          'handlers': [
-                              logging.StreamHandler(),
-                          ]}
+                          'handlers': handlers}
         logging.basicConfig(**logging_config)
 
     def validate_configuration(self):
@@ -78,7 +84,7 @@ class Monitor:
         android_tv.connect(rsa_keys=[signer], auth_timeout_s=0.1)
 
         # Send a shell command
-        logger.info('Shutting off TV with shell command')
+        logger.info('Shutting off TV via shell command')
         tv_off_command_key = '26'
         android_tv.shell('input keyevent %s' % tv_off_command_key)
 
@@ -88,6 +94,7 @@ class Monitor:
                 and args
                 and args[0]['opcode'] == cec.CEC_OPCODE_STANDBY
                 and args[0]['destination'] == cec.CECDEVICE_BROADCAST):
+            logger.debug('Standby command received')
             self.turn_off_tv()
 
     def configure_cec(self):
@@ -111,9 +118,23 @@ class Monitor:
 
 
 def main():
+    parser = argparse.ArgumentParser(description='Start the HDMI CEC Monitor.')
+    parser.add_argument('--tv_ip_address', type=str, help='The IP address of the Android TV')
+    parser.add_argument('--adb_port', default=5555, type=int, help='The adb port used to connect')
+    parser.add_argument('--adb_key_filepath', type=str, help='The path to the adb private key, usually '
+                                                             'located in ~/.android/adbkey after adb is installed')
+    parser.add_argument('-v', '--verbose', help='Increase output verbosity', action='store_true')
+    parser.add_argument('-l', '--log_to_disk', default=False,
+                        help='Log to /tmp/hdmi_cec_to_adb.log', action='store_true')
+
+    args = parser.parse_args()
+
+    monitor = Monitor(args.tv_ip_address,
+                      args.adb_key_filepath,
+                      args.adb_port,
+                      args.verbose,
+                      args.log_to_disk)
     try:
-        monitor = Monitor(os.getenv('TV_IP_ADDRESS'),
-                          os.getenv('ADB_KEY_FILEPATH', os.path.expanduser('~/.android/adbkey')))
         monitor.run_forever()
     except:
         logger.exception('Unhandled exception')
