@@ -1,4 +1,10 @@
+# OS related ignoring
+.DS_Store
+
+# IDE
 .idea
+
+# Python specific
 *.pyc
 dist
 build
