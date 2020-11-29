@@ -40,5 +40,5 @@ pip install hdmi-cec-to-adb
 ```bash
 # Add the following to your crontab and make sure you use your TV IP Address
 SHELL=/bin/bash
-@reboot export TV_IP_ADDRESS=192.168.1.99 && source /home/pi/.virtualenvs/hdmi_cec_to_adb/bin/activate && start_hdmi_cec_monitor
+@reboot source /home/pi/.virtualenvs/hdmi_cec_to_adb/bin/activate && start_hdmi_cec_monitor --tv_ip_address=192.168.1.99 --adb_key_filepath=/home/pi/.android/adbkey
 ```
