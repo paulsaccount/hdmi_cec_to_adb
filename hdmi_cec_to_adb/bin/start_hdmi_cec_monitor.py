@@ -125,6 +125,7 @@ class Monitor:
         background_thread = Thread(target=Monitor.timer)
         background_thread.start()
 
+
 def main():
     parser = argparse.ArgumentParser(description='Start the HDMI CEC Monitor.')
     parser.add_argument('--tv_ip_address', type=str, help='The IP address of the Android TV')
