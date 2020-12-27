@@ -99,7 +99,14 @@ class Monitor:
             logger.debug('Standby command received')
             self.turn_off_tv()
 
+    @staticmethod
+    def turn_off_tvservice():
+        tvservice_command = subprocess.run(['tvservice', '--off'], stdout=subprocess.PIPE, text=True)
+        if tvservice_command.returncode != 0:
+            raise ValueError('Could not stop tvservice [tvservice_command.stdout=%s]' % tvservice_command.stdout)
+
     def configure_cec(self):
+        self.turn_off_tvservice()
         cec.init()
         cec.add_callback(self.cec_callback, cec.EVENT_ALL)
 

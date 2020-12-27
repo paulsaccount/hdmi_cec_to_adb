@@ -86,7 +86,7 @@ class TestStartHdmiCecMonitor(TestCase):
 
     @mock.patch('os.path.exists')
     def test_cec_callback_given_non_standby_event_calls_turn_off_tv(self,
-                                                                mock_exists):
+                                                                    mock_exists):
         # arrange
         mock_exists.return_value = True
         monitor = Monitor('127.0.0.1', '/tmp/exists')
@@ -101,3 +101,59 @@ class TestStartHdmiCecMonitor(TestCase):
         # assert
         mock_exists.called_once()
         turn_off_tv_mock.assert_called_once()
+
+    @mock.patch('hdmi_cec_to_adb.bin.start_hdmi_cec_monitor.Monitor.validate_configuration')
+    @mock.patch('hdmi_cec_to_adb.bin.start_hdmi_cec_monitor.Monitor.turn_off_tvservice')
+    @mock.patch('hdmi_cec_to_adb.bin.start_hdmi_cec_monitor.cec')
+    def test_configure_cec_given_turns_off_tv_service_and_setups_callback(self,
+                                                                          mock_cec,
+                                                                          mock_turn_off_tvservice,
+                                                                          mock_validate_configuration):
+        # arrange
+        monitor = Monitor('127.0.0.1', '/tmp/exists')
+
+        # act
+        monitor.configure_cec()
+
+        # assert
+        mock_validate_configuration.assert_called_once()
+        mock_turn_off_tvservice.assert_called_once()
+        mock_cec.init.assert_called_once()
+        mock_cec.add_callback.assert_called_once_with(monitor.cec_callback, mock_cec.EVENT_ALL)
+
+    @mock.patch('hdmi_cec_to_adb.bin.start_hdmi_cec_monitor.Monitor.validate_configuration')
+    @mock.patch('hdmi_cec_to_adb.bin.start_hdmi_cec_monitor.subprocess')
+    def test_turn_off_tvservice_given_running_tvservice_does_not_raise_exception(self,
+                                                                                 mock_subprocess,
+                                                                                 mock_validate_configuration):
+        # arrange
+        monitor = Monitor('127.0.0.1', '/tmp/exists')
+        run_magic_mock = MagicMock()
+        run_magic_mock.returncode = 0
+        mock_subprocess.run.return_value = run_magic_mock
+
+        # act
+        monitor.turn_off_tvservice()
+
+        # assert
+        mock_validate_configuration.assert_called_once()
+        mock_subprocess.run.assert_called_once_with(['tvservice', '--off'], stdout=mock_subprocess.PIPE, text=True)
+
+    @mock.patch('hdmi_cec_to_adb.bin.start_hdmi_cec_monitor.Monitor.validate_configuration')
+    @mock.patch('hdmi_cec_to_adb.bin.start_hdmi_cec_monitor.subprocess')
+    def test_turn_off_tvservice_given_non_zero_return_raise_exception(self,
+                                                                      mock_subprocess,
+                                                                      mock_validate_configuration):
+        # arrange
+        monitor = Monitor('127.0.0.1', '/tmp/exists')
+        run_magic_mock = MagicMock()
+        run_magic_mock.returncode = 1
+        mock_subprocess.run.return_value = run_magic_mock
+
+        # act / assert
+        with self.assertRaises(ValueError):
+            monitor.turn_off_tvservice()
+
+        # assert
+        mock_validate_configuration.assert_called_once()
+        mock_subprocess.run.assert_called_once_with(['tvservice', '--off'], stdout=mock_subprocess.PIPE, text=True)
